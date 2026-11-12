@@ -1,3 +1,97 @@
+# CPT Discord Help Bot
+
+## Project Overview
+
+CPT Discord Help Bot is a CPT 273 Process Automation project for the Fall 2026 semester, developed by Jeff Begin and Alan Crawford.
+
+The goal is to create a Python-based Discord bot that uses a Large Language Model (LLM) API to help students understand programming concepts and course material.
+
+Students will be able to ask questions through a designated Discord channel and receive educational explanations. The bot is intended to support learning rather than complete assignments for students.
+
+## Project Status
+
+**Current Status:** Proposal completed; awaiting submission and instructor approval.
+
+**Planned Completion Date:** December 6, 2026
+
+Development will begin after the project proposal has been approved.
+
+## Project Team
+
+- Jeff Begin
+- Alan Crawford
+
+**Course:** CPT 273 – Process Automation  
+**Semester:** Fall 2026
+
+## Planned Features
+
+- Receive student questions through a designated Discord channel.
+- Send questions to an LLM API.
+- Return educational responses to Discord.
+- Explain programming concepts, syntax, and functions.
+- Include error handling for API failures and usage limits.
+- Maintain logs for troubleshooting.
+- Protect API credentials using environment variables.
+
+### Optional Features
+
+If time permits, we would like to add support for multiple LLM APIs and improve conversation handling.
+
+## Planned Technical Stack
+
+- **Operating System:** Linux
+- **Programming Language:** Python
+- **Discord Integration:** discord.py
+- **LLM Integration:** External LLM API
+- **Environment Variables:** python-dotenv
+- **Logging:** Python logging module
+- **Version Control:** Git and GitHub
+- **Development Environment:** VS Code
+- **Deployment:** Linux VM or container within the cpt.internal network
+
+## Project Documentation
+
+The completed project will include installation, configuration, troubleshooting, and maintenance instructions.
+
+Documentation will also be added to the UVDesk knowledgebase to help future students and administrators maintain and expand the bot.
+
+## Project Proposal
+
+The completed project proposal is available in this repository:
+
+[View Project Proposal](proposal.md)
+
+## Project Timeline
+
+| Phase | Dates | Description |
+|---|---|---|
+| 1 | Nov 8–14 | Research LLM APIs and plan the bot |
+| 2 | Nov 15–21 | Develop the Discord bot and connect the LLM API |
+| 3 | Nov 22–24 | Configure and refine the LLM system prompt |
+| 4 | Nov 25–29 | Test functionality and improve error handling |
+| 5 | Nov 30–Dec 3 | Complete documentation and prepare presentation |
+| 6 | Dec 4–6 | Final review, demonstration, and submission |
+
+## Future Development
+
+The project will be designed so future students can maintain the bot, update its configuration, and potentially integrate additional LLM APIs.
+
+## Important Notice
+
+This bot is intended to provide educational assistance. Students should verify AI-generated information and should not submit personal or sensitive information through the bot.
+
+The project must receive instructor approval before implementation begins.
+
+---
+
+## Original Instructor Template Instructions
+
+The following instructions were provided with the original
+CPT Project Proposal Template and are retained for reference.
+
+---
+
 # Technical Project Proposal Template
 
 This repository contains the required materials for submitting a project proposal
