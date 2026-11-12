@@ -1,147 +1,128 @@
 # Project Proposal
 
 ## 1. Project Identification
-- **Project Title:**
-- **Course:**
-- **Term:**
-- **Student Name(s):**
-- **Primary Contact:**
-- **Proposed Start Date:**
-- **Proposed End Date:**
+- Project Title: cpt-discord-help-bot
+- Course: CPT 273
+- Term: Fall 2026
+- Student Name(s): Jeff Begin, Alan Crawford
+- Primary Contact: Project 1 – Group 1 Channel
+- Proposed Start Date: November 1, 2026
+- Proposed End Date: December 6, 2026
 
 ---
 
 ## 2. Project Selection & Motivation
-Describe why you selected this project and why you are a good fit.
-
-Include:
-- Personal or professional motivation
-- Alignment with career goals
-- Relevant interests or prior exposure
+We as a team chose this idea because of the relevance and availability of large language models. We both have interest in working more with them for our careers and believe this project would aid us in gaining experience in both LLMs and integrating them into user environments. Our team has experience with utilizing Python to manipulate data and publish via Discord web-hooks, so we know where to start. We also have experience with setting up LLMs to fulfill a specified purpose for its user, with one of us having taken Introduction to AI Applications as a class.
+This project also aligns with our interest in software development and automation. It will give us hands-on experience working with APIs, integrating AI into applications, and developing a tool that other students can use. We believe these skills will be valuable in future coursework and careers in information technology.
 
 ---
 
 ## 3. Problem Statement
-Clearly describe the problem, need, or opportunity this project addresses.
-
-Answer:
-- What problem exists?
-- Who is affected?
-- Why does this problem matter?
-
-Limit to 1–2 focused paragraphs.
+Students sometimes need additional help understanding course material, especially when working on assignments outside of class. They may have questions about programming concepts, syntax, or functions when an instructor or another student is not available to help.
+Our project would address this need by providing a Discord chatbot that students can use to ask basic questions and receive explanations. The goal is to help students better understand the material and work through problems on their own rather than having the chatbot complete their assignments. This could also provide a foundation for future projects and improvements.
 
 ---
 
 ## 4. Proposed Solution Overview
-Provide a high-level description of your proposed solution.
-
-Include:
-- What you intend to build, deploy, or configure
-- Core features or capabilities
-- Explicit exclusions (what the project will *not* include)
+Our proposed project is to develop a Python-based Discord bot that allows students to ask questions about course material through a designated Discord channel. The bot will receive messages, send questions to an LLM API, and return responses to the channel. The LLM will be configured to provide educational guidance, such as explaining programming concepts, syntax, and functions, without providing complete assignment solutions.
+Our initial goal is to create a fully functional bot that communicates with one LLM API. The program will include basic error handling for failed requests and API limits. The initial project will not include generating complete assignments, hosting our own LLM, or advanced features such as managing multiple conversations across different channels. If time permits, we would like to expand the program to support multiple LLM APIs.
 
 ---
 
 ## 5. Technical Stack & Tools
-List the technologies you expect to use.  Please note that this solution MUST live within the cpt.internal network and must be maintainable by future students.
+- Operating System(s): Linux, using the environment provided within the CPT network.
+- Programming Language(s): Python.
+- Frameworks / Libraries: discord.py for receiving and responding to Discord messages, requests or an appropriate API SDK for communicating with the LLM, python-dotenv for managing environment variables, and Python’s built-in logging module for troubleshooting.
+- Databases / Storage: Local log files for errors and program activity. A database is not planned for the initial project.
+- Infrastructure (VMs, containers, etc.): A Linux virtual machine or container hosted within the cpt.internal network. The bot will connect to the designated Discord server and an external LLM API.
+- Tools (Git, CI, monitoring, APIs, etc.): Git and GitHub for version control, VS Code for development, Discord for testing, an LLM API for generating responses, and Python logging for monitoring and troubleshooting.
 
-- **Operating System(s):**
-- **Programming Language(s):**
-- **Frameworks / Libraries:**
-- **Databases / Storage:**
-- **Infrastructure (VMs, containers, etc.):**
-- **Tools (Git, CI, monitoring, APIs, etc.):**
+  We will organize the Python program into manageable components and provide documentation explaining how to install, configure, troubleshoot, and update the bot. API credentials will be stored separately from the source code to make the project easier to maintain and more secure.
+
 
 ---
 
 ## 6. Prerequisite Knowledge & Skills
-Assess your readiness for this project.
+  I (Alan Crawford) have worked with setting up system prompts with LLMs before to ensure output stays appropriate to the project's purpose. I am taking Intro to AI Applications and have experience through Process Automation and Capstone of creating code to handle sending and receiving data. I will need to sharpen my skills on prompting to ensure our LLM of choice responds within our guidelines. Other than that, I feel comfortable taking on the coding work that will come with building the Python program for this project.
 
-Include:
-- Skills you already have
-- Skills you need to learn
-- Relevant coursework completed
-- Prior projects or experience
+  I (Jeff Begin) have experience using Python, APIs, JSON data, automation, and Discord webhooks through previous coursework in Process Automation. I also have experience working with Linux, virtual machines, logging, error handling, and scheduling tasks using CRON. These skills will help me develop and troubleshoot the Python program for this project. I would like to learn more about LLM APIs, Discord bots, and how to securely integrate them.
 
-Be honest—this section helps scope the project appropriately.
 
 ---
 
 ## 7. Project Scope & Deliverables
-Define what success looks like.
+**Minimum Viable Product (MVP):**
+A fully functioning Python Discord bot that can receive questions from students, send them to an LLM API, and return responses to a designated Discord channel. The bot will provide educational explanations rather than complete assignment solutions and include basic error handling.
 
-Include:
-- Minimum viable deliverable (MVP)
-- Required outputs (application, scripts, documentation, etc.)
-- Optional stretch goals (if time permits)
+**Required Deliverables:**
+The completed Python program, LLM system prompt, GitHub repository containing the source code, installation and configuration documentation, testing results, weekly team meeting minutes, and a final presentation demonstrating the working bot.
+
+**Optional Stretch Goals:**
+If time permits, we would like to add support for multiple LLM APIs, improve conversation handling, and explore additional features that could make the bot more useful to students.
 
 ---
 
 ## 8. Milestones & Timeline
-Provide a rough timeline broken into phases.
+Phase 1 (Nov 8–14): Research available LLM APIs, select a provider, and plan the Discord bot.
 
-Example:
-- Phase 1: Research & Design
-- Phase 2: Core Implementation
-- Phase 3: Testing & Refinement
-- Phase 4: Documentation & Presentation
+Phase 2 (Nov 15–21): Develop the Python Discord bot and connect it to the selected LLM API.
 
-Dates do not need to be exact, but planning is required.
+Phase 3 (Nov 22–24): Configure and refine the LLM system prompt to provide appropriate educational responses.
+
+Phase 4 (Nov 25–29): Test the bot, troubleshoot issues, and improve error handling.
+
+Phase 5 (Nov 30–Dec 3): Complete documentation, prepare the presentation, and perform final testing.
+
+Phase 6 (Dec 4–6): Review the completed project, demonstrate the working bot, and submit all required materials.
 
 ---
 
 ## 9. Risks, Constraints & Dependencies
-Identify potential challenges.
+  The largest technical risks for this project are LLM API token limits, connection failures, and possible issues with Discord bot permissions. We will need to include error handling and logging to identify and troubleshoot these problems.
 
-Include:
-- Technical risks
-- Time constraints
-- External dependencies (APIs, credentials, access)
-- Mitigation strategies
+  Another challenge is the limited time available to complete the project before December 6, 2026. To manage this, we will focus on developing a working Discord bot with one LLM API before attempting additional features.
+
+  The project will also depend on receiving Discord bot credentials, having access to the CPT network, and being able to connect to an external LLM API. We will test these connections early and work with our instructor if access or permission issues arise. If time permits, supporting multiple LLM APIs could provide an alternative if one service becomes unavailable.
 
 ---
 
 ## 10. Security, Ethics & Safety Considerations
-Address any relevant concerns, such as:
-- Authentication and authorization
-- Data sensitivity
-- Network exposure
-- Logging, monitoring, or automation impact
-- Ethical considerations
+  The main security concerns for this project involve protecting API credentials, student information, and connections to external services. We will store API keys and Discord bot credentials in environment variables rather than directly in the Python code. The bot will only be given the Discord permissions needed to function.
 
-A brief assessment of all of these is required, even if it is "N/A".
+  Since the bot will operate within the CPT network and communicate with an external LLM API, we will follow the network access requirements provided by our instructor. We will inform students that their questions are sent to an external service and remind them not to share personal or sensitive information.
+  
+  We will use logging to monitor errors and troubleshoot problems while avoiding the unnecessary collection of student information. The bot will also be configured to provide educational explanations rather than complete assignment solutions. Since LLMs can sometimes provide incorrect information, students will be encouraged to verify answers and use the bot as a learning tool rather than a replacement for their instructor.
 
 ---
 
 ## 11. Team Structure (If Applicable)
-If working in a group, describe:
-- Team roles
-- Communication plan
-- Conflict resolution approach
-- Workload distribution
+  Alan Crawford and Jeff Begin will work together to develop, test, and document the Discord bot. We will divide responsibilities based on our experience and the needs of the project, with both team members contributing to development and troubleshooting.
+
+  We will communicate through Discord and meet at least once a week to discuss progress, assign tasks, and address any problems. We will document our meetings and submit meeting minutes as required by the instructor.
+
+  If disagreements arise, we will discuss possible solutions and work toward an agreement. If necessary, we will ask our instructor for guidance. We will divide the workload as evenly as possible and use GitHub to track our progress and contributions.
 
 ---
 
 ## 12. Documentation & Knowledge Transfer Plan
-Explain how this project will be documented.  Please note that this should include documentation in the UVDesk knowledgebase at the very least.  Programming projects should include readme.md files. 
+  We will document our Python code and the LLM system prompts used by the Discord bot. Our GitHub repository will include a README.md file explaining the project’s purpose, requirements, installation, configuration, and basic usage.
 
-Include:
-- README or user documentation
-- Deployment or maintenance guides
-- How another student or administrator could continue the project
+  We will also provide instructions for deploying and maintaining the bot within the CPT network, including how to configure environment variables, troubleshoot common errors, and update the LLM API connection. We will document these procedures in the UVDesk knowledge-base so future students and administrators can access them.
+
+  The program will be organized to make it easier for future students to understand, maintain, and expand. Our documentation will explain how the main components work together and how additional LLM APIs or features could be added in the future.
 
 ---
 
 ## 13. Faculty/cpt.internal Resources Requested
-List any required resources:
-- VM access
-- Network access
-- Credentials or APIs
-- Special permissions
-- Hardware (if applicable)
-
-Please be sure to consider any future tickets you may need to submit to complete this work as those will need to be generated and assigned to the appropriate groups as soon as feasibly possible once the project kicks off to ensure timely delivery.  I will step in to help where required but you will likely be working with students in other classes so please be cognizant of their time!
+- VM Access
+- Internet Access
+- Access to the CPT internal network for development and deployment.
+- Discord bot token credentials provided by the instructor.
+- A dedicated Discord channel for testing and communicating with the bot.
+- Access to an LLM API, preferably one with a free usage tier.
+- Permission to install required Python libraries and run the bot on the assigned VM or container.
+- UVDesk knowledgebase access, if additional permissions are required.
+- No additional hardware is expected to be required.
 
 ---
 
@@ -153,9 +134,8 @@ By submitting this proposal, I acknowledge that:
 
 **Signature (Name & Date):**
 
-Student 1:  ____________________________ Date: _______________
-Student 2:  ____________________________ Date: _______________
-Student 3:  ____________________________ Date: _______________
-Student 4:  ____________________________ Date: _______________
+Student 1:   Alan Crawford III           Date: 11/6/2026
+
+Student 2:  Jeff Begin                   Date: 11/7/2026
 
 Instructor: ____________________________ Date: _______________
