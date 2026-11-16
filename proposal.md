@@ -11,6 +11,12 @@
 
 ---
 
+### Revision History
+
+- **November 16, 2026:** Updated the proposed project architecture to target Ollama for local AI processing, based on instructor feedback.
+
+---
+
 ## 2. Project Selection & Motivation
 We as a team chose this idea because of the relevance and availability of large language models. We both have interest in working more with them for our careers and believe this project would aid us in gaining experience in both LLMs and integrating them into user environments. Our team has experience with utilizing Python to manipulate data and publish via Discord web-hooks, so we know where to start. We also have experience with setting up LLMs to fulfill a specified purpose for its user, with one of us having taken Introduction to AI Applications as a class.
 This project also aligns with our interest in software development and automation. It will give us hands-on experience working with APIs, integrating AI into applications, and developing a tool that other students can use. We believe these skills will be valuable in future coursework and careers in information technology.
@@ -24,20 +30,20 @@ Our project would address this need by providing a Discord chatbot that students
 ---
 
 ## 4. Proposed Solution Overview
-Our proposed project is to develop a Python-based Discord bot that allows students to ask questions about course material through a designated Discord channel. The bot will receive messages, send questions to an LLM API, and return responses to the channel. The LLM will be configured to provide educational guidance, such as explaining programming concepts, syntax, and functions, without providing complete assignment solutions.
-Our initial goal is to create a fully functional bot that communicates with one LLM API. The program will include basic error handling for failed requests and API limits. The initial project will not include generating complete assignments, hosting our own LLM, or advanced features such as managing multiple conversations across different channels. If time permits, we would like to expand the program to support multiple LLM APIs.
+Our proposed project is to develop a Python-based Discord bot that allows students to ask questions about course material through a designated Discord channel. The bot will receive messages, send questions to an LLM through the Ollama API, and return responses to the channel. The LLM will be configured to provide educational guidance, such as explaining programming concepts, syntax, and functions, without providing complete assignment solutions. Our initial goal is to create a fully functional bot that communicates with Ollama. The program will include basic error handling for failed requests and connection issues. The bot will be designed to connect to a locally hosted Ollama server within the CPT network once the school's AI server becomes available. The initial project will not include generating complete assignments or advanced features such as managing multiple conversations across different channels. If time permits, we would like to explore support for additional LLM APIs.
 
 ---
 
 ## 5. Technical Stack & Tools
-- Operating System(s): Linux, using the environment provided within the CPT network.
-- Programming Language(s): Python.
-- Frameworks / Libraries: discord.py for receiving and responding to Discord messages, requests or an appropriate API SDK for communicating with the LLM, python-dotenv for managing environment variables, and Python’s built-in logging module for troubleshooting.
-- Databases / Storage: Local log files for errors and program activity. A database is not planned for the initial project.
-- Infrastructure (VMs, containers, etc.): A Linux virtual machine or container hosted within the cpt.internal network. The bot will connect to the designated Discord server and an external LLM API.
-- Tools (Git, CI, monitoring, APIs, etc.): Git and GitHub for version control, VS Code for development, Discord for testing, an LLM API for generating responses, and Python logging for monitoring and troubleshooting.
 
-  We will organize the Python program into manageable components and provide documentation explaining how to install, configure, troubleshoot, and update the bot. API credentials will be stored separately from the source code to make the project easier to maintain and more secure.
+- **Operating System(s):** Linux, using the environment provided within the CPT network.
+- **Programming Language(s):** Python.
+- **Frameworks / Libraries:** discord.py for receiving and responding to Discord messages, requests or the Ollama Python library for communicating with the locally hosted LLM, python-dotenv for managing environment variables, and Python's built-in logging module for troubleshooting.
+- **Databases / Storage:** Local log files for errors and program activity. A database is not planned for the initial project.
+- **Infrastructure (VMs, containers, etc.):** A Linux virtual machine or container hosted within the cpt.internal network. The bot will connect to the designated Discord server and communicate with Ollama running on the school's local AI server once it becomes available.
+- **Tools (Git, CI, monitoring, APIs, etc.):** Git and GitHub for version control, VS Code for development, Discord for testing, Ollama for generating AI responses, and Python logging for monitoring and troubleshooting.
+
+We will organize the Python program into manageable components and provide documentation explaining how to install, configure, troubleshoot, and update the bot. Configuration settings, including the Ollama server address and Discord bot credentials, will be stored separately from the source code to make the project easier to maintain and more secure.
 
 
 ---
@@ -52,20 +58,20 @@ Our initial goal is to create a fully functional bot that communicates with one 
 
 ## 7. Project Scope & Deliverables
 **Minimum Viable Product (MVP):**
-A fully functioning Python Discord bot that can receive questions from students, send them to an LLM API, and return responses to a designated Discord channel. The bot will provide educational explanations rather than complete assignment solutions and include basic error handling.
+A fully functioning Python Discord bot that can receive questions from students, send them to an LLM through the Ollama API, and return responses to a designated Discord channel. The bot will provide educational explanations rather than complete assignment solutions and include basic error handling.
 
 **Required Deliverables:**
 The completed Python program, LLM system prompt, GitHub repository containing the source code, installation and configuration documentation, testing results, weekly team meeting minutes, and a final presentation demonstrating the working bot.
 
 **Optional Stretch Goals:**
-If time permits, we would like to add support for multiple LLM APIs, improve conversation handling, and explore additional features that could make the bot more useful to students.
+If time permits, we would like to improve conversation handling, explore additional features that could make the bot more useful to students, and expand support for different locally hosted models through Ollama.
 
 ---
 
 ## 8. Milestones & Timeline
-Phase 1 (Nov 8–14): Research available LLM APIs, select a provider, and plan the Discord bot.
+Phase 1 (Nov 8–14): Research Ollama and available locally hosted LLM models, and plan the Discord bot.
 
-Phase 2 (Nov 15–21): Develop the Python Discord bot and connect it to the selected LLM API.
+Phase 2 (Nov 15–21): Develop the Python Discord bot and connect it to the Ollama API.
 
 Phase 3 (Nov 22–24): Configure and refine the LLM system prompt to provide appropriate educational responses.
 
@@ -78,20 +84,20 @@ Phase 6 (Dec 4–6): Review the completed project, demonstrate the working bot, 
 ---
 
 ## 9. Risks, Constraints & Dependencies
-  The largest technical risks for this project are LLM API token limits, connection failures, and possible issues with Discord bot permissions. We will need to include error handling and logging to identify and troubleshoot these problems.
+The largest technical risks for this project are the availability of the school's local AI server, connection failures with Ollama, and possible issues with Discord bot permissions. We will need to include error handling and logging to identify and troubleshoot these problems. The performance of the locally hosted LLM may also depend on the available server hardware.
 
-  Another challenge is the limited time available to complete the project before December 6, 2026. To manage this, we will focus on developing a working Discord bot with one LLM API before attempting additional features.
+Another challenge is the limited time available to complete the project before December 6, 2026. To manage this, we will focus on developing a working Discord bot that communicates with Ollama before attempting additional features.
 
-  The project will also depend on receiving Discord bot credentials, having access to the CPT network, and being able to connect to an external LLM API. We will test these connections early and work with our instructor if access or permission issues arise. If time permits, supporting multiple LLM APIs could provide an alternative if one service becomes unavailable.
+The project will also depend on receiving Discord bot credentials, having access to the CPT network, and being able to connect to a locally hosted Ollama server. Since the school's AI server is not currently available, we will plan for alternative testing methods, such as a temporary local Ollama installation or simulated API responses. We will test these connections as early as possible and work with our instructor if access or permission issues arise.
 
 ---
 
 ## 10. Security, Ethics & Safety Considerations
-  The main security concerns for this project involve protecting API credentials, student information, and connections to external services. We will store API keys and Discord bot credentials in environment variables rather than directly in the Python code. The bot will only be given the Discord permissions needed to function.
+  The main security concerns for this project involve protecting Discord bot credentials, student information, and connections to the locally hosted Ollama server. We will store Discord bot credentials and configuration settings in environment variables rather than directly in the Python code. The bot will only be given the Discord permissions needed to function.
 
-  Since the bot will operate within the CPT network and communicate with an external LLM API, we will follow the network access requirements provided by our instructor. We will inform students that their questions are sent to an external service and remind them not to share personal or sensitive information.
-  
-  We will use logging to monitor errors and troubleshoot problems while avoiding the unnecessary collection of student information. The bot will also be configured to provide educational explanations rather than complete assignment solutions. Since LLMs can sometimes provide incorrect information, students will be encouraged to verify answers and use the bot as a learning tool rather than a replacement for their instructor.
+Since the bot will operate within the CPT network and communicate with a locally hosted Ollama server, we will follow the network access requirements provided by our instructor. We will inform students that their questions are processed by the school's local AI server and remind them not to share personal or sensitive information.
+
+We will use logging to monitor errors and troubleshoot problems while avoiding the unnecessary collection of student information. The bot will also be configured to provide educational explanations rather than complete assignment solutions. Since LLMs can sometimes provide incorrect information, students will be encouraged to verify answers and use the bot as a learning tool rather than a replacement for their instructor.
 
 ---
 
@@ -105,11 +111,11 @@ Phase 6 (Dec 4–6): Review the completed project, demonstrate the working bot, 
 ---
 
 ## 12. Documentation & Knowledge Transfer Plan
-  We will document our Python code and the LLM system prompts used by the Discord bot. Our GitHub repository will include a README.md file explaining the project’s purpose, requirements, installation, configuration, and basic usage.
+  We will document our Python code and the LLM system prompts used by the Discord bot. Our GitHub repository will include a README.md file explaining the project's purpose, requirements, installation, configuration, and basic usage.
 
-  We will also provide instructions for deploying and maintaining the bot within the CPT network, including how to configure environment variables, troubleshoot common errors, and update the LLM API connection. We will document these procedures in the UVDesk knowledge-base so future students and administrators can access them.
+We will also provide instructions for deploying and maintaining the bot within the CPT network, including how to configure environment variables, troubleshoot common errors, and configure the connection to the locally hosted Ollama server. We will document these procedures in the UVDesk knowledgebase so future students and administrators can access them.
 
-  The program will be organized to make it easier for future students to understand, maintain, and expand. Our documentation will explain how the main components work together and how additional LLM APIs or features could be added in the future.
+The program will be organized to make it easier for future students to understand, maintain, and expand. Our documentation will explain how the main components work together and how additional locally hosted models through Ollama or other features could be added in the future.
 
 ---
 
@@ -119,10 +125,10 @@ Phase 6 (Dec 4–6): Review the completed project, demonstrate the working bot, 
 - Access to the CPT internal network for development and deployment.
 - Discord bot token credentials provided by the instructor.
 - A dedicated Discord channel for testing and communicating with the bot.
-- Access to an LLM API, preferably one with a free usage tier.
+- Access to the school's local AI server running Ollama once it becomes available.
 - Permission to install required Python libraries and run the bot on the assigned VM or container.
 - UVDesk knowledgebase access, if additional permissions are required.
-- No additional hardware is expected to be required.
+- No additional hardware is expected to be required beyond the school's existing AI server and assigned development environment.
 
 ---
 
