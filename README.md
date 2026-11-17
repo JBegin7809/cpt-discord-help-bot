@@ -24,7 +24,7 @@ Development will begin after the project proposal has been approved.
 **Course:** CPT 273 – Process Automation  
 **Semester:** Fall 2026
 
-##Planned Features
+## Planned Features
 
 - Receive student questions through a designated Discord channel.
 - Send questions to a locally hosted LLM through the Ollama API.
@@ -34,7 +34,7 @@ Development will begin after the project proposal has been approved.
 - Maintain logs for troubleshooting.
 - Protect Discord bot credentials and configuration settings using environment variables.
 
-###Optional Features
+### Optional Features
 
 If time permits, we would like to add support for different locally hosted models through Ollama and improve conversation handling.
 
