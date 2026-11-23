@@ -51,3 +51,27 @@ The school's local AI server is not yet available, so the Ollama connection cann
 - Discord bot token from the instructor.
 - Access to the school's locally hosted Ollama server.
 - Confirmation of the AI model that will be used.
+
+## November 23, 2026 – Discord Bot Development and Testing
+
+### Work Completed
+- Added Discord message handling using the `!ask` command.
+- Added validation for empty questions.
+- Implemented a configurable test mode.
+- Connected the Discord bot to the Ollama response function.
+- Added asynchronous processing and error handling.
+- Added Discord token validation.
+- Created `test_bot.py` for automated testing.
+
+### Testing Results
+Successfully completed six automated tests covering Discord commands, message handling, simulated AI integration, and error handling.
+
+### Current Limitations
+- Live Discord testing requires the bot token.
+- Real Ollama API testing requires access to an AI server or Ollama Cloud.
+
+### Next Steps
+- Continue improving automated tests.
+- Test live Discord communication when the token is available.
+- Test the Ollama API when access is available.
+- Prepare the bot for deployment on the school's Linux server.
