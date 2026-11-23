@@ -7,7 +7,9 @@
 import os
 import logging
 import discord
+import asyncio
 from dotenv import load_dotenv
+from ollama_client import get_ollama_response
 
 # Configure logging
 logging.basicConfig(
@@ -22,6 +24,8 @@ load_dotenv()
 
 # Discord bot configuration
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+# Enable temporary responses while the AI API is unavailable
+TEST_MODE = os.getenv("TEST_MODE", "true").lower() == "true"
 
 
 # Configure Discord bot permissions
@@ -38,3 +42,57 @@ async def on_ready():
     logger.info("Discord bot connected successfully")
     logger.info("Logged in as: %s", client.user)
 
+
+# Event triggered when a message is received in Discord
+@client.event
+async def on_message(message):
+    # Ignore messages sent by the bot itself
+    if message.author == client.user:
+        return
+
+    # Check if the message starts with the !ask command
+    if message.content == "!ask" or message.content.startswith("!ask "):
+        # Remove the command and extract the question
+        question = message.content[5:].strip()
+
+        # Check if the student provided a question
+        if not question:
+            await message.channel.send(
+                "Please include a question after !ask."
+            )
+            return
+
+        # Log that a question was received
+        logger.info("Received a student question")
+
+        # Respond using test mode or the AI
+        if TEST_MODE:
+            # Temporary response without contacting Ollama
+            await message.channel.send(
+            "Your question was received! Running in test mode."
+        )
+        else:
+            # Send the question to Ollama without blocking Discord
+            try:
+                response = await asyncio.to_thread(
+                get_ollama_response, question
+                )
+
+                # Send the AI response back to Discord
+                await message.channel.send(response)
+
+            except Exception:
+                # Log unexpected errors
+                logger.exception("Unexpected error processing AI response")
+
+                # Notify the student
+                await message.channel.send(
+                    "Sorry, an unexpected error occurred. Please try again later."
+                )
+
+# Start the Discord bot
+if __name__ == "__main__":
+    if not DISCORD_TOKEN:
+        logger.error("DISCORD_TOKEN is not configured in the .env file.")
+    else:
+        client.run(DISCORD_TOKEN)

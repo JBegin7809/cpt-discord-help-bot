@@ -6,6 +6,7 @@
 # Libraries
 import os
 import logging
+import httpx
 
 from ollama import Client, ResponseError
 from dotenv import load_dotenv
