@@ -103,6 +103,7 @@ Successfully completed six automated tests covering Discord commands, message ha
 - Preserved the original response text without losing characters.
 - Added validation for invalid maximum message lengths.
 - Maintained Discord's 2,000-character message limit.
+- Added Groq API for testing before local Ollama
 
 ### Testing Results
 - Expanded automated testing from nine to twelve tests.
@@ -115,3 +116,4 @@ Successfully completed six automated tests covering Discord commands, message ha
 - Improve the handling of Markdown formatting and code blocks in long AI responses.
 - Test the bot with live Discord and Ollama connections when access becomes available.
 - Continue preparing the application for deployment to the school's Linux server.
+- Remove Groq API from main code.
