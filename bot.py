@@ -35,6 +35,19 @@ intents.message_content = True
 # Create the Discord bot client
 client = discord.Client(intents=intents)
 
+# Split long AI responses into Discord-sized messages
+def split_message(text, max_length=2000):
+    # Return an empty list if there is no text
+    if not text:
+        return []
+
+    # Split the text into chunks
+    chunks = []
+
+    for start in range(0, len(text), max_length):
+        chunks.append(text[start:start + max_length])
+
+    return chunks
 
 # Event triggered when the bot connects to Discord
 @client.event
@@ -78,8 +91,15 @@ async def on_message(message):
                 get_ollama_response, question
                 )
 
-                # Send the AI response back to Discord
-                await message.channel.send(response)
+                # Handle empty AI responses
+                if not response or not response.strip():
+                    await message.channel.send(
+                        "The AI did not return a response. Please try again."
+                )
+                else:
+                    # Split long AI responses into Discord-sized messages
+                    for chunk in split_message(response):
+                        await message.channel.send(chunk)
 
             except Exception:
                 # Log unexpected errors
@@ -89,6 +109,8 @@ async def on_message(message):
                 await message.channel.send(
                     "Sorry, an unexpected error occurred. Please try again later."
                 )
+
+
 
 # Start the Discord bot
 if __name__ == "__main__":

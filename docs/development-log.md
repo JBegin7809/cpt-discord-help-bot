@@ -75,3 +75,22 @@ Successfully completed six automated tests covering Discord commands, message ha
 - Test live Discord communication when the token is available.
 - Test the Ollama API when access is available.
 - Prepare the bot for deployment on the school's Linux server.
+
+## November 23, 2026 – Long AI Response Handling
+
+### Work Completed
+- Created `split_message()` to divide AI responses into messages of 2,000 characters or fewer.
+- Updated Discord message handling to send long AI responses in multiple messages.
+- Added error handling for empty AI responses.
+- Expanded automated testing from six to nine tests.
+
+### Testing Results
+- All nine automated tests passed.
+- Verified that a 4,500-character response splits into three messages (2,000, 2,000, and 500 characters).
+- Verified that Discord sends all three messages in simulated testing.
+- Confirmed that empty AI responses produce a helpful message.
+
+### Next Steps
+- Improve message splitting to avoid breaking words or sentences.
+- Test with the live Discord bot and Ollama API when access is available.
+- Continue preparing for deployment to the school's Linux server.
