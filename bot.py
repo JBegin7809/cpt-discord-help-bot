@@ -35,17 +35,39 @@ intents.message_content = True
 # Create the Discord bot client
 client = discord.Client(intents=intents)
 
-# Split long AI responses into Discord-sized messages
+# Split long AI responses at natural break points
 def split_message(text, max_length=2000):
     # Return an empty list if there is no text
     if not text:
         return []
 
-    # Split the text into chunks
+    # Validate the maximum message length
+    if max_length <= 0:
+        raise ValueError("Maximum length must be positive")
+
     chunks = []
 
-    for start in range(0, len(text), max_length):
-        chunks.append(text[start:start + max_length])
+    while len(text) > max_length:
+        # Prefer splitting at a line break
+        split_at = text.rfind("\n", 0, max_length)
+
+        # Otherwise, split at a space
+        if split_at <= 0:
+            split_at = text.rfind(" ", 0, max_length)
+
+        # Fall back to the character limit
+        if split_at <= 0:
+            split_at = max_length
+        else:
+            split_at += 1
+
+        # Store the chunk and preserve the remaining text
+        chunks.append(text[:split_at])
+        text = text[split_at:]
+
+    # Add the remaining text
+    if text:
+        chunks.append(text)
 
     return chunks
 

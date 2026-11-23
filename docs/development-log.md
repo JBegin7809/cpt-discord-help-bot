@@ -94,3 +94,24 @@ Successfully completed six automated tests covering Discord commands, message ha
 - Improve message splitting to avoid breaking words or sentences.
 - Test with the live Discord bot and Ollama API when access is available.
 - Continue preparing for deployment to the school's Linux server.
+
+## November 23, 2026 – Improved AI Message Splitting
+
+### Work Completed
+- Improved the `split_message()` function to prioritize natural line breaks and word boundaries.
+- Retained character-based splitting when no natural break is available.
+- Preserved the original response text without losing characters.
+- Added validation for invalid maximum message lengths.
+- Maintained Discord's 2,000-character message limit.
+
+### Testing Results
+- Expanded automated testing from nine to twelve tests.
+- Verified splitting at natural line breaks.
+- Verified splitting at word boundaries.
+- Verified handling of empty messages, short messages, character limits, and invalid maximum lengths.
+- All twelve automated tests passed successfully.
+
+### Next Steps
+- Improve the handling of Markdown formatting and code blocks in long AI responses.
+- Test the bot with live Discord and Ollama connections when access becomes available.
+- Continue preparing the application for deployment to the school's Linux server.

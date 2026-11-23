@@ -202,6 +202,69 @@ async def test_empty_ai_response():
 
     print("PASS: Empty AI responses are handled correctly")
 
+def test_split_at_line_break():
+    # Create a response containing a line break
+    response = "Python is useful.\nPython supports automation."
+
+    # Split using a smaller limit for testing
+    chunks = split_message(response, max_length=25)
+
+    # Verify the first message ends at the line break
+    assert chunks[0] == "Python is useful.\n"
+
+    # Verify all messages are within the limit
+    assert all(len(chunk) <= 25 for chunk in chunks)
+
+    # Verify no text was lost
+    assert "".join(chunks) == response
+
+    print("PASS: Messages split at natural line breaks")
+
+def test_split_at_word_boundary():
+    # Create a response without line breaks
+    response = "Python is a useful programming language."
+
+    # Split using a smaller limit for testing
+    chunks = split_message(response, max_length=20)
+
+    # Verify that words are not split
+    assert chunks[0] == "Python is a useful "
+    assert chunks[1] == "programming "
+    assert chunks[2] == "language."
+
+    # Verify all messages are within the limit
+    assert all(len(chunk) <= 20 for chunk in chunks)
+
+    # Verify no text was lost
+    assert "".join(chunks) == response
+
+    print("PASS: Messages split at word boundaries")
+
+def test_split_message_edge_cases():
+    # Test an empty response
+    assert split_message("") == []
+
+    # Test a short response
+    assert split_message("Hello") == ["Hello"]
+
+    # Test a response exactly at the Discord limit
+    response = "A" * 2000
+    assert split_message(response) == [response]
+
+    # Test a response one character over the limit
+    response = "A" * 2001
+    assert split_message(response) == ["A" * 2000, "A"]
+
+    # Test an invalid maximum length
+    try:
+        split_message("Hello", max_length=0)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Expected ValueError")
+
+    print("PASS: Message splitting edge cases handled correctly")
+
 # Run all automated tests
 if __name__ == "__main__":
     asyncio.run(test_ask_command())
@@ -213,3 +276,6 @@ if __name__ == "__main__":
     test_split_message()
     asyncio.run(test_long_ai_response())
     asyncio.run(test_empty_ai_response())
+    test_split_at_line_break()
+    test_split_at_word_boundary()
+    test_split_message_edge_cases()
