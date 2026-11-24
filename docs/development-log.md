@@ -228,3 +228,52 @@ All existing regression tests continue to pass.
 - Verify cooldown behavior with multiple students on a live Discord server.
 - Verify integration with the school's local Ollama server.
 - Monitor cooldown behavior under actual usage conditions.
+
+## November 24, 2026 - Concurrent Request Protection
+
+### Changes Implemented
+
+- Added configurable maximum concurrent AI requests.
+- Added active request tracking using a Python set.
+- Added protection against overlapping student requests.
+- Added global AI request capacity limits.
+- Added friendly rejection messages when the AI is busy.
+- Integrated concurrent request protection with the
+  existing per-user cooldown system.
+- Added automatic request cleanup using a finally block.
+- Added validation for maximum concurrent request settings.
+- Improved request cleanup protection by moving request
+  registration inside the try block.
+
+### Testing
+
+- Verified request availability.
+- Verified overlapping request rejection.
+- Verified global request limit enforcement.
+- Verified request registration and release.
+- Verified Discord rejection messages.
+- Verified cleanup after successful, failed, and empty
+  AI responses.
+- Verified valid, invalid, and missing configuration values.
+- Completed final regression testing.
+
+### Test Results
+
+- Total automated tests: 45
+- Passed: 45
+- Failed: 0
+- Exit code: 0
+
+### Documentation Updates
+
+- Updated .env.example with MAX_CONCURRENT_REQUESTS.
+- Updated README.md with implemented project features.
+- Added request cooldown configuration documentation.
+- Added concurrent request protection documentation.
+
+### Outstanding Items
+
+- Live Discord integration testing.
+- Live Ollama integration testing.
+- Evaluate concurrent request limits on the school's AI server.
+- Review background-thread cancellation handling.

@@ -24,7 +24,7 @@ Development will begin after the project proposal has been approved.
 **Course:** CPT 273 – Process Automation  
 **Semester:** Fall 2026
 
-## Planned Features
+## Project Features
 
 - Receive student questions through a designated Discord channel.
 - Send questions to a locally hosted LLM through the Ollama API.
@@ -33,12 +33,21 @@ Development will begin after the project proposal has been approved.
 - Include error handling for Ollama connection failures and server errors.
 - Maintain logs for troubleshooting.
 - Protect Discord bot credentials and configuration settings using environment variables.
+- Test mode for development without contacting the Ollama server.
+- Automatic splitting of long Discord responses.
+- Preserve Markdown formatting when splitting responses.
+- Display a typing indicator while the AI processes questions.
+- Configurable per-user request cooldown to prevent spam.
+- Concurrent AI request protection to prevent server overload.
+- Prevent overlapping AI requests from individual students.
+- Automatically release active request slots after AI processing.
+- Automated testing to verify bot functionality and error handling.
 
 ### Optional Features
 
 If time permits, we would like to add support for different locally hosted models through Ollama and improve conversation handling.
 
-## Planned Technical Stack
+## Technical Stack
 
 - **Operating System:** Linux
 - **Programming Language:** Python
@@ -49,6 +58,41 @@ If time permits, we would like to add support for different locally hosted model
 - **Version Control:** Git and GitHub
 - **Development Environment:** VS Code
 - **Deployment:** Linux VM or container within the cpt.internal network, connecting to the school's local AI server running Ollama when available
+
+## Configuration
+
+The bot uses a `.env` file to manage credentials and
+configuration settings. An `.env.example` file is provided
+as a configuration template.
+
+### Request Cooldown
+
+The bot limits how frequently individual students can
+submit questions.
+
+`REQUEST_COOLDOWN=10`
+
+- The default cooldown is 10 seconds.
+- Each student has an independent cooldown.
+- Rejected requests do not reset the cooldown.
+- Invalid or missing values default to 10 seconds.
+- Setting the value to 0 disables the cooldown.
+
+### Concurrent Request Protection
+
+The bot limits the number of simultaneous AI requests
+to prevent overloading the Ollama server.
+
+`MAX_CONCURRENT_REQUESTS=1`
+
+- The default limit is one simultaneous AI request.
+- Students cannot submit overlapping AI requests.
+- Requests exceeding the configured limit are rejected.
+- Rejected requests do not trigger a new cooldown.
+- Active request slots are automatically released after
+  successful, failed, or empty AI responses.
+- Invalid or missing configuration values default to 1.
+- Concurrent request protection is bypassed in test mode.
 
 ## Project Documentation
 

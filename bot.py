@@ -56,8 +56,61 @@ def get_request_cooldown():
 # Configure the validated request cooldown in seconds
 REQUEST_COOLDOWN = get_request_cooldown()
 
+# Validate the maximum concurrent request configuration
+def get_max_concurrent_requests():
+    default_limit = 1
+
+    try:
+        limit = int(
+            os.getenv("MAX_CONCURRENT_REQUESTS", "1")
+        )
+
+        # Reject zero and negative values
+        if limit <= 0:
+            raise ValueError("Invalid concurrent request limit")
+
+        return limit
+
+    except ValueError:
+        logger.warning(
+            "Invalid MAX_CONCURRENT_REQUESTS configuration. "
+            "Using default limit of 1."
+        )
+
+        return default_limit
+
+# Configure the validated concurrent request limit
+MAX_CONCURRENT_REQUESTS = get_max_concurrent_requests()
+
 # Track the last AI request time for each student
 user_cooldowns = {}
+
+# Track students with active AI requests
+active_requests = set()
+
+# Check whether a student can submit an AI request
+def can_accept_request(user_id):
+    # Prevent overlapping requests from the same student
+    if user_id in active_requests:
+        return False, "You already have an AI request in progress."
+
+    # Check the global concurrent request limit
+    if len(active_requests) >= MAX_CONCURRENT_REQUESTS:
+        return False, (
+            "The AI is currently busy. "
+            "Please try again shortly."
+        )
+
+    # Allow the request
+    return True, None
+
+# Register an active AI request
+def register_active_request(user_id):
+    active_requests.add(user_id)
+
+# Release a completed or failed AI request
+def release_active_request(user_id):
+    active_requests.discard(user_id)
 
 # Check the remaining cooldown time for a student
 def get_remaining_cooldown(user_id):
@@ -313,6 +366,15 @@ async def on_message(message):
             )
             return
 
+        # Check AI request availability outside test mode
+        if not TEST_MODE:
+            accepted, rejection_message = can_accept_request(user_id)
+
+            # Reject requests when the AI is unavailable
+            if not accepted:
+                await message.channel.send(rejection_message)
+                return
+
         # Record the accepted request
         record_user_request(user_id)
 
@@ -328,6 +390,9 @@ async def on_message(message):
         else:
             # Send the question to Ollama without blocking Discord
             try:
+                # Reserve an available AI request slot
+                register_active_request(user_id)
+
                 # Display typing indicator while the AI processes the question
                 async with message.channel.typing():
                     response = await asyncio.to_thread(
@@ -352,6 +417,10 @@ async def on_message(message):
                 await message.channel.send(
                     "Sorry, an unexpected error occurred. Please try again later."
                 )
+
+            finally:
+                # Release the active AI request slot
+                release_active_request(user_id)
 
 # Start the Discord bot
 if __name__ == "__main__":

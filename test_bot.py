@@ -12,6 +12,11 @@ from bot import (
     record_user_request,
     user_cooldowns,
     get_request_cooldown,
+    get_max_concurrent_requests,
+    active_requests,
+    can_accept_request,
+    register_active_request,
+    release_active_request, 
 )
 
 
@@ -876,6 +881,350 @@ def test_cooldown_missing_configuration():
 
     print("PASS: Missing cooldown configuration uses the default")
 
+# Test that requests are accepted when the AI is idle
+def test_request_available():
+    user_id = 1001
+
+    # Isolate active request tracking and configuration
+    with patch("bot.active_requests", set()), patch(
+        "bot.MAX_CONCURRENT_REQUESTS", 1
+    ):
+        # Check whether the student can submit a request
+        accepted, rejection_message = can_accept_request(user_id)
+
+        # Verify that the request is accepted
+        assert accepted is True
+        assert rejection_message is None
+
+    print("PASS: Requests are accepted when the AI is idle")
+
+# Test that students cannot submit overlapping AI requests
+def test_request_overlapping():
+    user_id = 1001
+
+    # Isolate active request tracking and configuration
+    with patch("bot.active_requests", {user_id}), patch(
+        "bot.MAX_CONCURRENT_REQUESTS", 2
+    ):
+        # Attempt another request from the same student
+        accepted, rejection_message = can_accept_request(user_id)
+
+        # Verify that the overlapping request is rejected
+        assert accepted is False
+        assert rejection_message == (
+            "You already have an AI request in progress."
+        )
+
+    print("PASS: Overlapping student requests are rejected")
+
+# Test that requests are rejected when the AI is at capacity
+def test_request_global_limit():
+    first_user = 1001
+    second_user = 1002
+
+    # Simulate an AI server with no available request slots
+    with patch("bot.active_requests", {first_user}), patch(
+        "bot.MAX_CONCURRENT_REQUESTS", 1
+    ):
+        # Attempt a request from another student
+        accepted, rejection_message = can_accept_request(second_user)
+
+        # Verify that the request is rejected
+        assert accepted is False
+        assert rejection_message == (
+            "The AI is currently busy. "
+            "Please try again shortly."
+        )
+
+    print("PASS: Global concurrent request limit is enforced")
+
+# Test active AI request registration and release
+def test_request_registration_release():
+    user_id = 1001
+
+    # Isolate active request tracking
+    with patch("bot.active_requests", set()) as requests:
+        # Register the student's request
+        register_active_request(user_id)
+
+        # Verify that the request was registered
+        assert user_id in requests
+        assert len(requests) == 1
+
+        # Release the student's request
+        release_active_request(user_id)
+
+        # Verify that the request was removed
+        assert user_id not in requests
+        assert len(requests) == 0
+
+    print("PASS: Active requests are registered and released correctly")
+
+# Test that the Discord bot rejects requests when the AI is busy
+async def test_request_busy_response():
+    # Create a simulated Discord message
+    message = MagicMock()
+    message.author = MagicMock()
+    message.author.id = 1002
+    message.content = "!ask What is Python?"
+    message.channel.send = AsyncMock()
+
+    # Simulate an AI server at maximum capacity
+    with patch("bot.active_requests", {1001}), patch(
+        "bot.MAX_CONCURRENT_REQUESTS", 1
+    ), patch("bot.TEST_MODE", False), patch.dict(
+        user_cooldowns, {}, clear=True
+    ), patch.object(
+        type(client), "user", new_callable=lambda: MagicMock()
+    ), patch("bot.get_ollama_response") as mock_ai:
+
+        # Process the student's request
+        await client.on_message(message)
+
+        # Verify that the student received the busy message
+        message.channel.send.assert_awaited_once_with(
+            "The AI is currently busy. "
+            "Please try again shortly."
+        )
+
+        # Verify that Ollama was not contacted
+        mock_ai.assert_not_called()
+
+        # Verify that the rejected request did not trigger a cooldown
+        assert 1002 not in user_cooldowns
+
+    print("PASS: Discord bot rejects requests when the AI is busy")
+
+# Test that Discord rejects overlapping requests from the same student
+async def test_request_duplicate_response():
+    # Create a simulated Discord message
+    message = MagicMock()
+    message.author = MagicMock()
+    message.author.id = 1001
+    message.content = "!ask What is Python?"
+    message.channel.send = AsyncMock()
+
+    # Simulate a student with an active AI request
+    with patch("bot.active_requests", {1001}), patch(
+        "bot.MAX_CONCURRENT_REQUESTS", 2
+    ), patch("bot.TEST_MODE", False), patch.dict(
+        user_cooldowns, {}, clear=True
+    ), patch.object(
+        type(client), "user", new_callable=lambda: MagicMock()
+    ), patch("bot.get_ollama_response") as mock_ai:
+
+        # Process the student's duplicate request
+        await client.on_message(message)
+
+        # Verify that the duplicate request was rejected
+        message.channel.send.assert_awaited_once_with(
+            "You already have an AI request in progress."
+        )
+
+        # Verify that Ollama was not contacted
+        mock_ai.assert_not_called()
+
+        # Verify that the rejected request did not trigger a cooldown
+        assert 1001 not in user_cooldowns
+
+    print("PASS: Discord bot rejects overlapping student requests")
+
+# Test automatic request cleanup after a successful AI response
+async def test_request_cleanup_success():
+    # Create a simulated Discord message
+    message = MagicMock()
+    message.author = MagicMock()
+    message.author.id = 1001
+    message.content = "!ask What is Python?"
+    message.channel.send = AsyncMock()
+    message.channel.typing.return_value = MagicMock()
+
+    # Isolate active requests and simulate a successful AI response
+    with patch("bot.active_requests", set()) as requests, patch(
+        "bot.MAX_CONCURRENT_REQUESTS", 1
+    ), patch("bot.TEST_MODE", False), patch.dict(
+        user_cooldowns, {}, clear=True
+    ), patch.object(
+        type(client), "user", new_callable=lambda: MagicMock()
+    ), patch(
+        "bot.get_ollama_response"
+    ) as mock_ai:
+
+        # Configure the simulated asynchronous typing indicator
+        message.channel.typing.return_value.__aenter__ = AsyncMock()
+        message.channel.typing.return_value.__aexit__ = AsyncMock(
+            return_value=False
+        )
+
+        # Simulate AI processing
+        def simulated_ai_response(question):
+            # Verify that the request slot is occupied
+            assert 1001 in requests
+            return "Python is a programming language."
+
+        mock_ai.side_effect = simulated_ai_response
+
+        # Process the student's request
+        await client.on_message(message)
+
+        # Verify that the AI returned a response
+        mock_ai.assert_called_once_with("What is Python?")
+
+        message.channel.send.assert_awaited_once_with(
+            "Python is a programming language."
+        )
+
+        # Verify that the active request slot was released
+        assert 1001 not in requests
+        assert len(requests) == 0
+
+    print("PASS: Active requests are released after successful responses")
+
+# Test automatic request cleanup after a failed AI response
+async def test_request_cleanup_failure():
+    # Create a simulated Discord message
+    message = MagicMock()
+    message.author = MagicMock()
+    message.author.id = 1001
+    message.content = "!ask What is Python?"
+    message.channel.send = AsyncMock()
+    message.channel.typing.return_value = MagicMock()
+
+    # Isolate active requests and simulate an AI failure
+    with patch("bot.active_requests", set()) as requests, patch(
+        "bot.MAX_CONCURRENT_REQUESTS", 1
+    ), patch("bot.TEST_MODE", False), patch.dict(
+        user_cooldowns, {}, clear=True
+    ), patch.object(
+        type(client), "user", new_callable=lambda: MagicMock()
+    ), patch(
+        "bot.get_ollama_response"
+    ) as mock_ai:
+
+        # Configure the simulated asynchronous typing indicator
+        message.channel.typing.return_value.__aenter__ = AsyncMock()
+        message.channel.typing.return_value.__aexit__ = AsyncMock(
+            return_value=False
+        )
+
+        # Simulate an unexpected AI error
+        def simulated_ai_failure(question):
+            assert 1001 in requests
+            raise RuntimeError("Simulated AI failure")
+
+        mock_ai.side_effect = simulated_ai_failure
+
+        # Process the student's request
+        await client.on_message(message)
+
+        # Verify that the AI was contacted
+        mock_ai.assert_called_once_with("What is Python?")
+
+        # Verify that the student received an error message
+        message.channel.send.assert_awaited_once_with(
+            "Sorry, an unexpected error occurred. Please try again later."
+        )
+
+        # Verify that the active request slot was released
+        assert 1001 not in requests
+        assert len(requests) == 0
+
+    print("PASS: Active requests are released after failed responses")
+
+# Test automatic request cleanup after an empty AI response
+async def test_request_cleanup_empty():
+    # Create a simulated Discord message
+    message = MagicMock()
+    message.author = MagicMock()
+    message.author.id = 1001
+    message.content = "!ask What is Python?"
+    message.channel.send = AsyncMock()
+    message.channel.typing.return_value = MagicMock()
+
+    # Isolate active requests and simulate an empty AI response
+    with patch("bot.active_requests", set()) as requests, patch(
+        "bot.MAX_CONCURRENT_REQUESTS", 1
+    ), patch("bot.TEST_MODE", False), patch.dict(
+        user_cooldowns, {}, clear=True
+    ), patch.object(
+        type(client), "user", new_callable=lambda: MagicMock()
+    ), patch(
+        "bot.get_ollama_response"
+    ) as mock_ai:
+
+        # Configure the simulated asynchronous typing indicator
+        message.channel.typing.return_value.__aenter__ = AsyncMock()
+        message.channel.typing.return_value.__aexit__ = AsyncMock(
+            return_value=False
+        )
+
+        # Simulate an empty AI response
+        def simulated_empty_response(question):
+            assert 1001 in requests
+            return ""
+
+        mock_ai.side_effect = simulated_empty_response
+
+        # Process the student's request
+        await client.on_message(message)
+
+        # Verify that the AI was contacted
+        mock_ai.assert_called_once_with("What is Python?")
+
+        # Verify that the student received a response
+        message.channel.send.assert_awaited_once()
+
+        # Verify that the active request slot was released
+        assert 1001 not in requests
+        assert len(requests) == 0
+
+    print("PASS: Active requests are released after empty responses")
+
+# Test valid maximum concurrent request configuration
+def test_max_concurrent_requests_valid():
+    # Simulate a valid environment configuration
+    with patch.dict(
+        "os.environ", {"MAX_CONCURRENT_REQUESTS": "3"}
+    ):
+        # Verify that the configured value is returned
+        result = get_max_concurrent_requests()
+
+        assert result == 3
+        assert isinstance(result, int)
+
+    print("PASS: Valid maximum concurrent request configuration")
+
+# Test invalid maximum concurrent request configurations
+def test_max_concurrent_requests_invalid():
+    # Define invalid configuration values
+    invalid_values = ["0", "-1", "abc", "1.5", "", "NaN", "inf"]
+
+    # Test each invalid configuration value
+    for value in invalid_values:
+        with patch.dict(
+            "os.environ", {"MAX_CONCURRENT_REQUESTS": value}
+        ):
+            # Verify that the default limit is returned
+            result = get_max_concurrent_requests()
+
+            assert result == 1
+            assert isinstance(result, int)
+
+    print("PASS: Invalid maximum concurrent request configurations")
+
+# Test missing maximum concurrent request configuration
+def test_max_concurrent_requests_missing():
+    # Simulate an environment without the configuration
+    with patch.dict("os.environ", {}, clear=True):
+
+        # Verify that the default limit is returned
+        result = get_max_concurrent_requests()
+
+        assert result == 1
+        assert isinstance(result, int)
+
+    print("PASS: Missing maximum concurrent request configuration")
+
 # Run all automated tests
 if __name__ == "__main__":
     asyncio.run(test_ask_command())
@@ -911,3 +1260,15 @@ if __name__ == "__main__":
     test_cooldown_valid_configuration()
     test_cooldown_invalid_configuration()
     test_cooldown_missing_configuration()
+    test_request_available()
+    test_request_overlapping()
+    test_request_global_limit()
+    test_request_registration_release()
+    asyncio.run(test_request_busy_response())
+    asyncio.run(test_request_duplicate_response())
+    asyncio.run(test_request_cleanup_success())
+    asyncio.run(test_request_cleanup_failure())
+    asyncio.run(test_request_cleanup_empty())
+    test_max_concurrent_requests_valid()
+    test_max_concurrent_requests_invalid()
+    test_max_concurrent_requests_missing()
