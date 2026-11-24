@@ -115,3 +115,36 @@ Successfully completed six automated tests covering Discord commands, message ha
 - Improve the handling of Markdown formatting and code blocks in long AI responses.
 - Test the bot with live Discord and Ollama connections when access becomes available.
 - Continue preparing the application for deployment to the school's Linux server.
+
+### Markdown-Aware AI Response Handling
+
+**Development Completed:**
+- Implemented the `split_markdown_message()` function.
+- Added automatic closing and reopening of Markdown code blocks across multiple Discord messages.
+- Preserved programming language identifiers for syntax highlighting.
+- Added support for unfinished Markdown code blocks.
+- Improved handling of responses containing both explanations and code examples.
+- Preserved complete lines of code whenever possible.
+- Maintained Discord's 2,000-character message limit.
+- Integrated Markdown-aware message splitting into the Discord `on_message()` function.
+
+**Testing Completed:**
+- Verified regular text handling.
+- Tested short and long Markdown code blocks.
+- Tested Python, Bash, SQL, and JavaScript language identifiers.
+- Verified unfinished code block handling.
+- Tested mixed text and code responses.
+- Verified complete code line preservation without losing or duplicating code in the tested examples.
+- Successfully tested Markdown integration using simulated Discord messages.
+- Completed regression testing with all 20 automated tests passing.
+
+**Current Status:**
+- Markdown-aware response handling is implemented and locally tested.
+- No errors or warnings reported by VS Code.
+- Live Discord and AI API integration testing remains pending.
+
+**Next Steps:**
+- Coordinate AI API integration with Alan.
+- Contact the instructor regarding Discord access and webhook requirements.
+- Perform live end-to-end testing using Groq.
+- Transition to the school's local Ollama server when available.

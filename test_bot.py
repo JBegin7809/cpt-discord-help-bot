@@ -4,7 +4,7 @@
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from bot import client, split_message
+from bot import client, split_message, split_markdown_message
 
 
 async def test_ask_command():
@@ -265,6 +265,214 @@ def test_split_message_edge_cases():
 
     print("PASS: Message splitting edge cases handled correctly")
 
+# Test Markdown splitting with regular text
+def test_markdown_plain_text():
+    response = "Python is a useful programming language."
+
+    # Compare Markdown splitting with standard splitting
+    chunks = split_markdown_message(response, max_length=20)
+
+    expected = split_message(response, max_length=20)
+
+    # Verify that both functions produce the same result
+    assert chunks == expected
+
+    # Verify that no text was lost
+    assert "".join(chunks) == response
+
+    print("PASS: Markdown splitting preserves regular text")
+
+# Test Markdown splitting with a short Python code block
+def test_markdown_short_code_block():
+    response = '```python\nprint("Hello, world!")\n```'
+
+    # Process the Markdown response
+    chunks = split_markdown_message(response)
+
+    # Verify that only one message was created
+    assert len(chunks) == 1
+
+    # Verify that the original formatting was preserved
+    assert chunks[0] == response
+
+    # Verify the Discord character limit
+    assert len(chunks[0]) <= 2000
+
+    print("PASS: Short Markdown code blocks are preserved")
+
+# Test Markdown splitting with a long Python code block
+def test_markdown_long_code_block():
+    # Create a long Python code example
+    code = 'print("Hello, world!")\n' * 200
+    response = "```python\n" + code + "```"
+
+    # Process the long Markdown response
+    chunks = split_markdown_message(response)
+
+    # Verify that multiple messages were created
+    assert len(chunks) > 1
+
+    # Verify each message stays within Discord's limit
+    assert all(len(chunk) <= 2000 for chunk in chunks)
+
+    # Verify each message has opening and closing fences
+    for chunk in chunks:
+        assert chunk.startswith("```python\n")
+        assert chunk.endswith("```")
+
+    print("PASS: Long Markdown code blocks are split correctly")
+
+# Test Markdown splitting with multiple programming languages
+def test_markdown_multiple_languages():
+    languages = ["python", "bash", "sql", "javascript"]
+
+    for language in languages:
+        # Create a long code block
+        code = "Example code line\n" * 200
+        response = "```" + language + "\n" + code + "```"
+
+        # Process the Markdown response
+        chunks = split_markdown_message(response)
+
+        # Verify that multiple messages were created
+        assert len(chunks) > 1
+
+        # Verify formatting and character limits
+        for chunk in chunks:
+            assert chunk.startswith("```" + language + "\n")
+            assert chunk.endswith("```")
+            assert len(chunk) <= 2000
+
+    print("PASS: Multiple programming languages are preserved")
+
+# Test Markdown splitting with an unfinished code block
+def test_markdown_unclosed_code_block():
+    # Create a response without a closing code fence
+    response = '```python\nprint("Hello, world!")'
+
+    # Process the unfinished Markdown response
+    chunks = split_markdown_message(response)
+
+    # Verify that only one message was created
+    assert len(chunks) == 1
+
+    # Verify that the missing code fence was added
+    assert chunks[0] == response + "\n```"
+
+    # Verify the Discord character limit
+    assert len(chunks[0]) <= 2000
+
+    print("PASS: Unfinished Markdown code blocks are closed")
+
+# Test Markdown splitting with mixed text and code
+def test_markdown_mixed_content():
+    # Create a response containing explanations and code
+    introduction = "Here is a Python example:\n\n"
+    code = 'print("Hello, world!")\n' * 200
+    conclusion = "\n\nThis code demonstrates the print function."
+
+    response = introduction + "```python\n" + code
+    response += "```" + conclusion
+
+    # Process the Markdown response
+    chunks = split_markdown_message(response)
+
+    # Verify that multiple messages were created
+    assert len(chunks) > 1
+
+    # Verify that the introduction and conclusion remain
+    assert chunks[0].startswith(introduction)
+    assert chunks[-1].endswith(conclusion)
+
+    # Verify message lengths and balanced code fences
+    for chunk in chunks:
+        assert len(chunk) <= 2000
+        assert chunk.count("```") % 2 == 0
+        
+    print("PASS: Mixed text and code blocks are handled correctly")
+
+# Test Markdown splitting preserves complete code lines
+def test_markdown_code_line_preservation():
+    # Create a Python code block with multiple lines
+    code_line = 'print("Hello, world!")\n'
+    code = code_line * 200
+    response = "```python\n" + code + "```"
+
+    # Process the Markdown response
+    chunks = split_markdown_message(response)
+
+    # Verify that multiple messages were created
+    assert len(chunks) > 1
+
+    # Verify that complete lines of code are preserved
+    recovered_code = ""
+
+    for chunk in chunks:
+        assert len(chunk) <= 2000
+        assert chunk.startswith("```python\n")
+        assert chunk.endswith("```")
+
+        # Remove the Markdown code fences
+        content = chunk[len("```python\n"):-3]
+
+        # Verify each line remains complete
+        for line in content.splitlines():
+            assert line == code_line.rstrip("\n")
+
+        recovered_code += content
+
+    # Verify that no code was lost or duplicated
+    assert recovered_code == code
+
+    print("PASS: Complete lines of code are preserved")
+
+# Test Markdown integration with Discord message handling
+async def test_markdown_integration():
+    # Create a simulated Discord message
+    message = MagicMock()
+    message.author = MagicMock()
+    message.content = "!ask How does Python print work?"
+    message.channel.send = AsyncMock()
+
+    # Create a long Markdown AI response
+    code = 'print("Hello, world!")\n' * 200
+    response = "```python\n" + code + "```"
+
+    # Simulate the Discord bot and AI response
+    with patch.object(
+        type(client), "user", new_callable=lambda: MagicMock()
+    ), patch(
+        "bot.TEST_MODE", False
+    ), patch(
+        "bot.get_ollama_response", return_value=response
+    ):
+        await client.on_message(message)
+
+    # Retrieve the messages sent to Discord
+    chunks = [
+        call.args[0]
+        for call in message.channel.send.await_args_list
+    ]
+
+    # Verify that multiple messages were sent
+    assert len(chunks) > 1
+
+    # Verify Markdown formatting and message lengths
+    for chunk in chunks:
+        assert len(chunk) <= 2000
+        assert chunk.startswith("```python\n")
+        assert chunk.endswith("```")
+
+    # Verify that no code was lost or duplicated
+    recovered_code = "".join(
+        chunk[len("```python\n"):-3]
+        for chunk in chunks
+    )
+
+    assert recovered_code == code
+
+    print("PASS: Discord Markdown integration works correctly")
+
 # Run all automated tests
 if __name__ == "__main__":
     asyncio.run(test_ask_command())
@@ -279,3 +487,11 @@ if __name__ == "__main__":
     test_split_at_line_break()
     test_split_at_word_boundary()
     test_split_message_edge_cases()
+    test_markdown_plain_text()
+    test_markdown_short_code_block()
+    test_markdown_long_code_block()
+    test_markdown_multiple_languages()
+    test_markdown_unclosed_code_block()
+    test_markdown_mixed_content()
+    test_markdown_code_line_preservation()
+    asyncio.run(test_markdown_integration())

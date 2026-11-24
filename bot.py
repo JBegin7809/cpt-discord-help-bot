@@ -71,6 +71,158 @@ def split_message(text, max_length=2000):
 
     return chunks
 
+# Split AI responses while preserving Markdown formatting
+def split_markdown_message(text, max_length=2000):
+    # Return an empty list if there is no text
+    if not text:
+        return []
+
+    # Validate the maximum message length
+    if max_length <= 0:
+        raise ValueError("Maximum length must be positive")
+
+    # Check whether the response contains Markdown code fences
+    if "```" not in text:
+        return split_message(text, max_length)
+
+    # Initialize Markdown message tracking
+    chunks = []
+    current_chunk = ""
+    inside_code_block = False
+    code_language = ""
+
+    # Close an unfinished Markdown code block
+    def close_code_block(chunk):
+        if chunk.endswith("\n"):
+            return chunk + "```"
+
+        return chunk + "\n```"
+
+    # Reopen a Markdown code block with its original language
+    def reopen_code_block(language):
+        return "```" + language + "\n"
+
+    # Calculate the remaining space in the current message
+    def available_space(chunk, in_code_block):
+        remaining = max_length - len(chunk)
+
+        # Reserve space for closing Markdown code fences
+        if in_code_block:
+            remaining -= 4
+
+        return remaining
+
+    # Finalize the current message and prepare the next one
+    def finalize_chunk():
+        nonlocal current_chunk
+
+        # Ignore empty messages
+        if not current_chunk:
+            return
+
+        if inside_code_block:
+            # Close the current code block
+            chunks.append(close_code_block(current_chunk))
+
+            # Reopen the code block in the next message
+            current_chunk = reopen_code_block(code_language)
+        else:
+            # Save the current message and reset it
+            chunks.append(current_chunk)
+            current_chunk = ""
+
+    # Separate the response into lines while preserving line breaks
+    lines = text.splitlines(keepends=True)
+
+    # Process each line of the response
+    for line in lines:
+        stripped_line = line.strip()
+
+        # Detect Markdown code fences
+        if stripped_line.startswith("```"):
+            if not inside_code_block:
+                # Store the programming language
+                code_language = stripped_line[3:].strip()
+
+                # Ensure the opening fence leaves room for content
+                if len(line) + 4 >= max_length:
+                    raise ValueError("Code fence exceeds message limit")
+
+                # Start a new message if there is insufficient space
+                if len(current_chunk) + len(line) + 4 >= max_length:
+                    finalize_chunk()
+
+                # Add the opening code fence
+                current_chunk += line
+                inside_code_block = True
+
+            else:
+                # Add the closing code fence
+                if len(current_chunk) + len(line) > max_length:
+                    finalize_chunk()
+
+                current_chunk += line
+                inside_code_block = False
+                code_language = ""
+
+            continue
+
+                # Process regular text and code block content
+        while line:
+            remaining = available_space(
+                current_chunk, inside_code_block
+            )
+
+            # Start a new message when no space remains
+            if remaining <= 0:
+                finalize_chunk()
+
+                remaining = available_space(
+                    current_chunk, inside_code_block
+                )
+
+                # Prevent an infinite loop
+                if remaining <= 0:
+                    raise ValueError("Insufficient message space")
+
+            # Add the entire line if it fits
+            if len(line) <= remaining:
+                current_chunk += line
+                break
+
+            # Preserve complete lines when possible
+            if inside_code_block:
+                opening_fence = reopen_code_block(code_language)
+
+                # Check whether the line fits in a new code block
+                if (
+                    current_chunk != opening_fence
+                    and len(line) <= available_space(opening_fence, True)
+                ):
+                    finalize_chunk()
+                    continue
+
+            elif current_chunk:
+                finalize_chunk()
+                continue
+
+            # Split lines that exceed the available space
+            current_chunk += line[:remaining]
+            line = line[remaining:]
+
+            # Finalize the message and prepare the next one
+            finalize_chunk()
+
+    # Save the final message
+    if current_chunk:
+        if inside_code_block:
+            chunks.append(close_code_block(current_chunk))
+        else:
+            chunks.append(current_chunk)
+
+    # Return all completed Discord messages
+    return chunks
+    
 # Event triggered when the bot connects to Discord
 @client.event
 async def on_ready():
@@ -119,8 +271,8 @@ async def on_message(message):
                         "The AI did not return a response. Please try again."
                 )
                 else:
-                    # Split long AI responses into Discord-sized messages
-                    for chunk in split_message(response):
+                    # Split AI responses while preserving Markdown formatting
+                    for chunk in split_markdown_message(response):
                         await message.channel.send(chunk)
 
             except Exception:
@@ -131,8 +283,6 @@ async def on_message(message):
                 await message.channel.send(
                     "Sorry, an unexpected error occurred. Please try again later."
                 )
-
-
 
 # Start the Discord bot
 if __name__ == "__main__":
