@@ -473,6 +473,86 @@ async def test_markdown_integration():
 
     print("PASS: Discord Markdown integration works correctly")
 
+# Test Discord typing indicator during AI processing
+async def test_typing_indicator():
+    # Create a simulated Discord message
+    message = MagicMock()
+    message.author = MagicMock()
+    message.content = "!ask What is Python?"
+    message.channel.send = AsyncMock()
+
+    # Create a simulated typing context manager
+    typing_context = MagicMock()
+    typing_context.__aenter__ = AsyncMock()
+    typing_context.__aexit__ = AsyncMock(return_value=False)
+
+    message.channel.typing.return_value = typing_context
+
+    # Simulate the Discord bot and AI response
+    with patch.object(
+        type(client), "user", new_callable=lambda: MagicMock()
+    ), patch(
+        "bot.TEST_MODE", False
+    ), patch(
+        "bot.get_ollama_response",
+        return_value="Python is a programming language."
+    ):
+        await client.on_message(message)
+
+    # Verify that the typing indicator was activated
+    message.channel.typing.assert_called_once()
+
+    # Verify that the typing context started and stopped
+    typing_context.__aenter__.assert_awaited_once()
+    typing_context.__aexit__.assert_awaited_once()
+
+    # Verify that the AI response was sent
+    message.channel.send.assert_awaited_once_with(
+        "Python is a programming language."
+    )
+
+    print("PASS: Discord typing indicator works correctly")
+
+# Test typing indicator cleanup during an AI failure
+async def test_typing_indicator_error():
+    # Create a simulated Discord message
+    message = MagicMock()
+    message.author = MagicMock()
+    message.content = "!ask What is Python?"
+    message.channel.send = AsyncMock()
+
+    # Create a simulated typing context manager
+    typing_context = MagicMock()
+    typing_context.__aenter__ = AsyncMock()
+    typing_context.__aexit__ = AsyncMock(return_value=False)
+
+    message.channel.typing.return_value = typing_context
+
+    # Simulate an unexpected AI failure
+    with patch.object(
+        type(client), "user", new_callable=lambda: MagicMock()
+    ), patch(
+        "bot.TEST_MODE", False
+    ), patch(
+        "bot.get_ollama_response",
+        side_effect=RuntimeError("Simulated AI failure")
+    ):
+        await client.on_message(message)
+
+    # Verify that the typing indicator was activated
+    message.channel.typing.assert_called_once()
+
+    # Verify that the typing context started and stopped
+    typing_context.__aenter__.assert_awaited_once()
+    typing_context.__aexit__.assert_awaited_once()
+
+    # Verify that the student received an error message
+    message.channel.send.assert_awaited_once()
+    error_message = message.channel.send.await_args.args[0]
+    assert "unexpected error" in error_message.lower()
+
+    print("PASS: Typing indicator stops during AI failures")
+
 # Run all automated tests
 if __name__ == "__main__":
     asyncio.run(test_ask_command())
@@ -495,3 +575,5 @@ if __name__ == "__main__":
     test_markdown_mixed_content()
     test_markdown_code_line_preservation()
     asyncio.run(test_markdown_integration())
+    asyncio.run(test_typing_indicator())
+    asyncio.run(test_typing_indicator_error())

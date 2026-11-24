@@ -261,9 +261,11 @@ async def on_message(message):
         else:
             # Send the question to Ollama without blocking Discord
             try:
-                response = await asyncio.to_thread(
-                get_ollama_response, question
-                )
+                # Display typing indicator while the AI processes the question
+                async with message.channel.typing():
+                    response = await asyncio.to_thread(
+                        get_ollama_response, question
+                    )
 
                 # Handle empty AI responses
                 if not response or not response.strip():

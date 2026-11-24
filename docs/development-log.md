@@ -148,3 +148,32 @@ Successfully completed six automated tests covering Discord commands, message ha
 - Contact the instructor regarding Discord access and webhook requirements.
 - Perform live end-to-end testing using Groq.
 - Transition to the school's local Ollama server when available.
+
+## November 24, 2026
+
+### Discord Typing Indicator
+
+**Development Completed:**
+- Implemented a Discord typing indicator within the `on_message()` function.
+- Used an asynchronous context manager to display the typing indicator while the AI processes student questions.
+- Maintained non-blocking AI request processing using `asyncio.to_thread()`.
+- Ensured the typing indicator stops when AI processing completes or encounters an unexpected error.
+- Maintained compatibility with existing message handling and error-handling functionality.
+
+**Testing Completed:**
+- Added `test_typing_indicator()` to verify successful typing indicator activation and cleanup.
+- Added `test_typing_indicator_error()` to verify cleanup during simulated AI failures.
+- Completed regression testing of existing bot functionality.
+- Verified that all 22 automated tests passed.
+- Confirmed successful program execution with an exit code of 0.
+
+**Current Status:**
+- Discord typing indicator implemented and locally tested.
+- Existing bot functionality remains operational in automated testing.
+- Live Discord testing remains pending until the instructor provides the Discord bot token.
+
+**Next Steps:**
+- Implement a request cooldown to prevent excessive AI requests.
+- Add concurrent request management to protect AI server resources.
+- Coordinate AI API integration with Alan.
+- Perform live Discord and AI integration testing.
