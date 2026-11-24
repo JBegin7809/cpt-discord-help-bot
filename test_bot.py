@@ -4,7 +4,15 @@
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from bot import client, split_message, split_markdown_message
+from bot import (
+    client,
+    split_message,
+    split_markdown_message,
+    get_remaining_cooldown,
+    record_user_request,
+    user_cooldowns,
+    get_request_cooldown,
+)
 
 
 async def test_ask_command():
@@ -553,6 +561,321 @@ async def test_typing_indicator_error():
 
     print("PASS: Typing indicator stops during AI failures")
 
+# Test that a student's first request has no cooldown
+def test_cooldown_first_request():
+    user_id = 1001
+
+    # Isolate cooldown tracking for this test
+    with patch.dict(user_cooldowns, {}, clear=True):
+
+        # Verify that a new student has no cooldown
+        remaining = get_remaining_cooldown(user_id)
+
+        assert remaining == 0.0
+
+    print("PASS: First request has no cooldown")
+
+# Test that a recent request activates the cooldown
+def test_cooldown_active():
+    user_id = 1001
+
+    # Isolate cooldown tracking and configuration
+    with patch.dict(user_cooldowns, {}, clear=True), patch(
+        "bot.REQUEST_COOLDOWN", 10
+    ):
+        # Simulate the student's first request
+        with patch("bot.time.monotonic", return_value=100.0):
+            record_user_request(user_id)
+
+        # Simulate another request three seconds later
+        with patch("bot.time.monotonic", return_value=103.0):
+            remaining = get_remaining_cooldown(user_id)
+
+        # Verify that seven seconds remain
+        assert remaining == 7.0
+
+    print("PASS: Active cooldown is calculated correctly")
+
+# Test that the cooldown expires correctly
+def test_cooldown_expired():
+    user_id = 1001
+
+    # Isolate cooldown tracking and configuration
+    with patch.dict(user_cooldowns, {}, clear=True), patch(
+        "bot.REQUEST_COOLDOWN", 10
+    ):
+        # Simulate the student's first request
+        with patch("bot.time.monotonic", return_value=100.0):
+            record_user_request(user_id)
+
+        # Verify cooldown expires at exactly ten seconds
+        with patch("bot.time.monotonic", return_value=110.0):
+            assert get_remaining_cooldown(user_id) == 0.0
+
+        # Verify expired cooldown does not become negative
+        with patch("bot.time.monotonic", return_value=115.0):
+            assert get_remaining_cooldown(user_id) == 0.0
+
+    print("PASS: Cooldown expires correctly")
+
+# Test that students have independent cooldowns
+def test_cooldown_independent_users():
+    first_user = 1001
+    second_user = 1002
+
+    # Isolate cooldown tracking and configuration
+    with patch.dict(user_cooldowns, {}, clear=True), patch(
+        "bot.REQUEST_COOLDOWN", 10
+    ):
+        # Record the first student's request
+        with patch("bot.time.monotonic", return_value=100.0):
+            record_user_request(first_user)
+
+        # Verify the second student is not affected
+        with patch("bot.time.monotonic", return_value=103.0):
+            assert get_remaining_cooldown(first_user) == 7.0
+            assert get_remaining_cooldown(second_user) == 0.0
+
+            # Record the second student's request
+            record_user_request(second_user)
+
+        # Verify both students have independent cooldowns
+        with patch("bot.time.monotonic", return_value=105.0):
+            assert get_remaining_cooldown(first_user) == 5.0
+            assert get_remaining_cooldown(second_user) == 8.0
+
+    print("PASS: Student cooldowns are independent")
+
+# Test that repeated requests are rejected during cooldown
+async def test_cooldown_repeated_request():
+    # Create a simulated Discord message
+    message = MagicMock()
+    message.author = MagicMock()
+    message.author.id = 1001
+    message.content = "!ask What is Python?"
+    message.channel.send = AsyncMock()
+
+    # Isolate cooldown tracking and configuration
+    with patch.dict(user_cooldowns, {}, clear=True), patch(
+        "bot.REQUEST_COOLDOWN", 10
+    ), patch(
+        "bot.TEST_MODE", True
+    ), patch.object(
+        type(client), "user", new_callable=lambda: MagicMock()
+    ):
+        # Process the student's first request
+        await client.on_message(message)
+
+        # Verify the first request was accepted
+        message.channel.send.assert_awaited_once_with(
+            "Your question was received! Running in test mode."
+        )
+
+        # Reset the simulated message history
+        message.channel.send.reset_mock()
+
+        # Process an immediate second request
+        await client.on_message(message)
+
+        # Verify the second request was rejected
+        message.channel.send.assert_awaited_once()
+        response = message.channel.send.await_args.args[0]
+
+        assert "Please wait" in response
+        assert "before asking another question" in response
+
+    print("PASS: Repeated requests are rejected during cooldown")
+
+# Test that rejected requests do not reset the cooldown
+async def test_cooldown_rejection_no_reset():
+    # Create a simulated Discord message
+    message = MagicMock()
+    message.author = MagicMock()
+    message.author.id = 1001
+    message.content = "!ask What is Python?"
+    message.channel.send = AsyncMock()
+
+    # Isolate cooldown tracking and configuration
+    with patch.dict(user_cooldowns, {}, clear=True), patch(
+        "bot.REQUEST_COOLDOWN", 10
+    ), patch(
+        "bot.TEST_MODE", True
+    ), patch.object(
+        type(client), "user", new_callable=lambda: MagicMock()
+    ):
+        # Process the student's first request
+        with patch("bot.time.monotonic", return_value=100.0):
+            await client.on_message(message)
+
+        # Store the original request timestamp
+        original_time = user_cooldowns[1001]
+
+        # Reset the simulated message history
+        message.channel.send.reset_mock()
+
+        # Submit another request three seconds later
+        with patch("bot.time.monotonic", return_value=103.0):
+            await client.on_message(message)
+
+        # Verify that the request was rejected
+        message.channel.send.assert_awaited_once_with(
+            "Please wait 7.0 seconds "
+            "before asking another question."
+        )
+
+        # Verify that the original timestamp was preserved
+        assert user_cooldowns[1001] == original_time
+
+        # Verify that the cooldown expires as originally scheduled
+        with patch("bot.time.monotonic", return_value=110.0):
+            assert get_remaining_cooldown(1001) == 0.0
+
+    print("PASS: Rejected requests do not reset cooldown")
+
+# Test that empty questions do not trigger a cooldown
+async def test_cooldown_empty_question():
+    # Create a simulated Discord message
+    message = MagicMock()
+    message.author = MagicMock()
+    message.author.id = 1001
+    message.content = "!ask"
+    message.channel.send = AsyncMock()
+
+    # Isolate cooldown tracking and configuration
+    with patch.dict(user_cooldowns, {}, clear=True), patch(
+        "bot.REQUEST_COOLDOWN", 10
+    ), patch(
+        "bot.TEST_MODE", True
+    ), patch.object(
+        type(client), "user", new_callable=lambda: MagicMock()
+    ):
+        # Process the empty question
+        await client.on_message(message)
+
+        # Verify that the student received a warning
+        message.channel.send.assert_awaited_once_with(
+            "Please include a question after !ask."
+        )
+
+        # Verify that no cooldown was recorded
+        assert 1001 not in user_cooldowns
+        assert get_remaining_cooldown(1001) == 0.0
+
+        # Reset the simulated message history
+        message.channel.send.reset_mock()
+
+        # Submit a valid question
+        message.content = "!ask What is Python?"
+        await client.on_message(message)
+
+        # Verify that the valid question was accepted
+        message.channel.send.assert_awaited_once_with(
+            "Your question was received! Running in test mode."
+        )
+
+        # Verify that the valid request triggered a cooldown
+        assert 1001 in user_cooldowns
+
+    print("PASS: Empty questions do not trigger cooldown")
+
+# Test that requests are accepted after cooldown expiration
+async def test_cooldown_request_after_expiration():
+    # Create a simulated Discord message
+    message = MagicMock()
+    message.author = MagicMock()
+    message.author.id = 1001
+    message.content = "!ask What is Python?"
+    message.channel.send = AsyncMock()
+
+    # Isolate cooldown tracking and configuration
+    with patch.dict(user_cooldowns, {}, clear=True), patch(
+        "bot.REQUEST_COOLDOWN", 10
+    ), patch(
+        "bot.TEST_MODE", True
+    ), patch.object(
+        type(client), "user", new_callable=lambda: MagicMock()
+    ):
+        # Process the student's first request
+        with patch("bot.time.monotonic", return_value=100.0):
+            await client.on_message(message)
+
+        # Verify the first request was accepted
+        message.channel.send.assert_awaited_once_with(
+            "Your question was received! Running in test mode."
+        )
+
+        # Reset the simulated message history
+        message.channel.send.reset_mock()
+
+        # Submit another request after cooldown expiration
+        with patch("bot.time.monotonic", return_value=110.0):
+            await client.on_message(message)
+
+            # Verify that a new cooldown was activated
+            assert get_remaining_cooldown(1001) == 10.0
+
+        # Verify that the second request was accepted
+        message.channel.send.assert_awaited_once_with(
+            "Your question was received! Running in test mode."
+        )
+
+        # Verify that the request timestamp was updated
+        assert user_cooldowns[1001] == 110.0
+
+    print("PASS: Requests are accepted after cooldown expiration")
+
+# Test valid request cooldown configuration values
+def test_cooldown_valid_configuration():
+    # Define valid configuration values and expected results
+    valid_values = {
+        "10": 10.0,
+        "5.5": 5.5,
+        "0": 0.0,
+        "30": 30.0,
+    }
+
+    # Verify each valid configuration value
+    for value, expected in valid_values.items():
+        with patch.dict(
+            "os.environ", {"REQUEST_COOLDOWN": value}
+        ):
+            assert get_request_cooldown() == expected
+
+    print("PASS: Valid cooldown configuration values are accepted")
+
+# Test invalid request cooldown configuration values
+def test_cooldown_invalid_configuration():
+    # Define invalid configuration values
+    invalid_values = [
+        "-10",
+        "-0.5",
+        "abc",
+        "",
+        "inf",
+        "-inf",
+        "nan",
+    ]
+
+    # Verify each invalid configuration value
+    for value in invalid_values:
+        with patch.dict(
+            "os.environ", {"REQUEST_COOLDOWN": value}
+        ):
+            # Verify the default cooldown is returned
+            assert get_request_cooldown() == 10.0
+
+    print("PASS: Invalid cooldown values use the default")
+
+# Test missing request cooldown configuration
+def test_cooldown_missing_configuration():
+    # Simulate a missing environment variable
+    with patch.dict("os.environ", {}, clear=True):
+
+        # Verify the default cooldown is returned
+        assert get_request_cooldown() == 10.0
+
+    print("PASS: Missing cooldown configuration uses the default")
+
 # Run all automated tests
 if __name__ == "__main__":
     asyncio.run(test_ask_command())
@@ -577,3 +900,14 @@ if __name__ == "__main__":
     asyncio.run(test_markdown_integration())
     asyncio.run(test_typing_indicator())
     asyncio.run(test_typing_indicator_error())
+    test_cooldown_first_request()
+    test_cooldown_active()
+    test_cooldown_expired()
+    test_cooldown_independent_users()
+    asyncio.run(test_cooldown_repeated_request())
+    asyncio.run(test_cooldown_rejection_no_reset())
+    asyncio.run(test_cooldown_empty_question())
+    asyncio.run(test_cooldown_request_after_expiration())
+    test_cooldown_valid_configuration()
+    test_cooldown_invalid_configuration()
+    test_cooldown_missing_configuration()

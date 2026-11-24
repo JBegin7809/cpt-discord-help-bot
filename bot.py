@@ -8,6 +8,8 @@ import os
 import logging
 import discord
 import asyncio
+import time
+import math
 from dotenv import load_dotenv
 from ollama_client import get_ollama_response
 
@@ -24,9 +26,59 @@ load_dotenv()
 
 # Discord bot configuration
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+
 # Enable temporary responses while the AI API is unavailable
 TEST_MODE = os.getenv("TEST_MODE", "true").lower() == "true"
 
+# Validate the request cooldown configuration
+def get_request_cooldown():
+    default_cooldown = 10.0
+
+    try:
+        cooldown = float(
+            os.getenv("REQUEST_COOLDOWN", "10")
+        )
+
+        # Reject negative and non-finite values
+        if cooldown < 0 or not math.isfinite(cooldown):
+            raise ValueError("Invalid cooldown value")
+
+        return cooldown
+
+    except ValueError:
+        logger.warning(
+            "Invalid REQUEST_COOLDOWN configuration. "
+            "Using default cooldown of 10 seconds."
+        )
+
+        return default_cooldown
+
+# Configure the validated request cooldown in seconds
+REQUEST_COOLDOWN = get_request_cooldown()
+
+# Track the last AI request time for each student
+user_cooldowns = {}
+
+# Check the remaining cooldown time for a student
+def get_remaining_cooldown(user_id):
+    current_time = time.monotonic()
+
+    # Retrieve the student's last request time
+    last_request = user_cooldowns.get(user_id)
+
+    # Allow requests from students without a recorded cooldown
+    if last_request is None:
+        return 0.0
+
+    # Calculate the remaining cooldown time
+    elapsed_time = current_time - last_request
+    remaining = REQUEST_COOLDOWN - elapsed_time
+
+    return max(0.0, remaining)
+
+# Record the student's most recent AI request
+def record_user_request(user_id):
+    user_cooldowns[user_id] = time.monotonic()
 
 # Configure Discord bot permissions
 intents = discord.Intents.default()
@@ -248,6 +300,21 @@ async def on_message(message):
                 "Please include a question after !ask."
             )
             return
+
+        # Check the student's request cooldown
+        user_id = message.author.id
+        remaining = get_remaining_cooldown(user_id)
+
+        # Reject requests during the cooldown period
+        if remaining > 0:
+            await message.channel.send(
+                f"Please wait {remaining:.1f} seconds "
+                "before asking another question."
+            )
+            return
+
+        # Record the accepted request
+        record_user_request(user_id)
 
         # Log that a question was received
         logger.info("Received a student question")

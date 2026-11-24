@@ -177,3 +177,54 @@ Successfully completed six automated tests covering Discord commands, message ha
 - Add concurrent request management to protect AI server resources.
 - Coordinate AI API integration with Alan.
 - Perform live Discord and AI integration testing.
+
+### Request Cooldown and Configuration Validation
+
+**Date:** November 24, 2026
+
+#### Development Completed
+
+- Implemented per-student request cooldowns to prevent excessive requests to the AI service.
+- Added a configurable `REQUEST_COOLDOWN` environment variable.
+- Established a default cooldown of 10 seconds.
+- Used `time.monotonic()` for reliable elapsed-time calculations.
+- Implemented independent cooldown tracking for each student.
+- Added feedback informing students of their remaining cooldown time.
+- Prevented rejected requests from resetting or extending existing cooldowns.
+- Ensured empty questions do not activate cooldowns.
+- Added configuration validation for negative, non-numeric, empty, and non-finite values.
+- Implemented warning messages and automatic fallback to the default cooldown.
+- Allowed administrators to disable cooldowns by setting `REQUEST_COOLDOWN=0`.
+
+#### Automated Testing
+
+Added 11 automated tests covering:
+
+- First request handling.
+- Active cooldown calculations.
+- Cooldown expiration.
+- Independent student cooldowns.
+- Repeated request rejection.
+- Preservation of cooldown timestamps after rejected requests.
+- Empty question handling.
+- Request acceptance after cooldown expiration.
+- Valid configuration values.
+- Invalid configuration values.
+- Missing configuration values.
+
+#### Testing Results
+
+- Total automated tests: 33
+- Successful tests: 33
+- Failed tests: 0
+- Pass rate: 100%
+- Program exit code: 0
+
+All existing regression tests continue to pass.
+
+#### Outstanding Items
+
+- Perform live Discord testing once the bot token is available.
+- Verify cooldown behavior with multiple students on a live Discord server.
+- Verify integration with the school's local Ollama server.
+- Monitor cooldown behavior under actual usage conditions.
